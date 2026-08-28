@@ -37,7 +37,6 @@ export const MemberModal: React.FC<MemberModalProps> = ({
         setName(editingMember.name);
         setStatus(editingMember.status);
         setExpectedContribution(String(editingMember.expected_contribution || defaultContribution));
-        // If amount_paid is 0 or undefined, pre-fill with 4000 so the user gets 4000 written directly
         const initialPaid = editingMember.amount_paid > 0 ? editingMember.amount_paid : Number(defaultContribution);
         setAmountPaid(String(initialPaid));
         setPaymentMode(editingMember.payment_mode || 'UPI/Online');
@@ -117,180 +116,182 @@ export const MemberModal: React.FC<MemberModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeup">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeup">
+      {/* Click outside backdrop */}
+      <div className="fixed inset-0 -z-10" onClick={onClose} />
+
       <div
-        className="w-full max-w-md rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="w-full max-w-lg rounded-t-[28px] sm:rounded-3xl flex flex-col max-h-[92dvh] sm:max-h-[85vh] shadow-2xl overflow-hidden bg-white"
         style={{
-          backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--color-border)',
         }}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Fixed Header */}
+        <div className="p-4 sm:p-5 pb-3 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+                {editingMember ? 'Edit Trip Member' : 'Record Member Payment'}
+              </h3>
+              <p className="text-[11px] text-slate-500">Record member contribution & attendance</p>
+            </div>
+          </div>
 
-        {/* Title */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">
-              {editingMember ? 'Edit Trip Member' : 'Add Trip Member'}
-            </h3>
-            <p className="text-xs text-slate-500">Record member contribution & attendance</p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Member Name */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Member Name *
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (nameError) setNameError('');
-              }}
-              placeholder="e.g. Rahul Sharma"
-              className="input-field w-full px-3.5 py-2.5 text-sm"
-              autoFocus
-            />
-            {nameError && <p className="text-xs text-rose-600 font-semibold mt-1">{nameError}</p>}
-          </div>
-
-          {/* Trip Status */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Trip Status
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['Confirmed', 'Maybe', 'Not Going'] as MemberStatus[]).map((st) => (
-                <button
-                  type="button"
-                  key={st}
-                  onClick={() => setStatus(st)}
-                  className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                    status === st
-                      ? st === 'Confirmed'
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                        : st === 'Maybe'
-                        ? 'bg-amber-100 text-amber-900 border-amber-400'
-                        : 'bg-rose-100 text-rose-900 border-rose-400'
-                      : 'bg-slate-50 text-slate-600 border-slate-200'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              {status === 'Confirmed'
-                ? '✅ Included in expected trip fund calculation.'
-                : '⚠️ Excluded from expected trip fund.'}
-            </p>
-          </div>
-
-          {/* Expected vs Paid Contribution */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3.5 overscroll-contain">
+            {/* Member Name */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Expected (₹)
+                Member Name *
               </label>
               <input
-                type="number"
-                value={expectedContribution}
-                onChange={(e) => setExpectedContribution(e.target.value)}
-                min="0"
-                className="input-field w-full px-3.5 py-2.5 text-sm font-bold"
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError('');
+                }}
+                placeholder="e.g. Rahul Sharma"
+                className="input-field w-full px-3.5 py-2.5 text-sm font-semibold"
+                autoFocus
               />
+              {nameError && <p className="text-xs text-rose-600 font-semibold mt-1">{nameError}</p>}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Paid (₹)
-              </label>
-              <input
-                type="number"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                min="0"
-                className="input-field w-full px-3.5 py-2.5 text-sm font-bold text-emerald-800"
-              />
-            </div>
-          </div>
-          {amountError && <p className="text-xs text-rose-600 font-semibold">{amountError}</p>}
-
-          {/* Payment Mode & Date (Always Visible) */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            {/* Trip Status */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Payment Mode
+                Trip Status
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMode('UPI/Online')}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border cursor-pointer ${
-                    paymentMode === 'UPI/Online'
-                      ? 'bg-amber-100 text-amber-900 border-amber-400'
-                      : 'bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>UPI / Online</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMode('Cash')}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border cursor-pointer ${
-                    paymentMode === 'Cash'
-                      ? 'bg-amber-100 text-amber-900 border-amber-400'
-                      : 'bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <Banknote className="w-3.5 h-3.5" />
-                  <span>Cash</span>
-                </button>
+              <div className="grid grid-cols-3 gap-2">
+                {(['Confirmed', 'Maybe', 'Not Going'] as MemberStatus[]).map((st) => (
+                  <button
+                    type="button"
+                    key={st}
+                    onClick={() => setStatus(st)}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      status === st
+                        ? st === 'Confirmed'
+                          ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                          : st === 'Maybe'
+                          ? 'bg-amber-100 text-amber-900 border-amber-400'
+                          : 'bg-rose-100 text-rose-900 border-rose-400'
+                        : 'bg-slate-50 text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
               </div>
             </div>
 
+            {/* Expected vs Paid Contribution */}
+            <div className="grid grid-cols-2 gap-3 pt-0.5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Expected (₹)
+                </label>
+                <input
+                  type="number"
+                  value={expectedContribution}
+                  onChange={(e) => setExpectedContribution(e.target.value)}
+                  min="0"
+                  className="input-field w-full px-3.5 py-2.5 text-sm font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Paid (₹)
+                </label>
+                <input
+                  type="number"
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(e.target.value)}
+                  min="0"
+                  className="input-field w-full px-3.5 py-2.5 text-sm font-extrabold text-emerald-800"
+                />
+              </div>
+            </div>
+            {amountError && <p className="text-xs text-rose-600 font-semibold">{amountError}</p>}
+
+            {/* Payment Mode & Date */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Payment Mode
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode('UPI/Online')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border cursor-pointer ${
+                      paymentMode === 'UPI/Online'
+                        ? 'bg-amber-100 text-amber-900 border-amber-400'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                    <span>UPI / Online</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode('Cash')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border cursor-pointer ${
+                      paymentMode === 'Cash'
+                        ? 'bg-amber-100 text-amber-900 border-amber-400'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <Banknote className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Cash</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Payment Date
+                </label>
+                <input
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="input-field w-full px-3 py-2 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Payment Date
+                Notes (Optional)
               </label>
               <input
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-                className="input-field w-full px-3 py-2 text-xs font-medium"
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. GPay screenshot verified"
+                className="input-field w-full px-3.5 py-2 text-xs"
               />
             </div>
           </div>
 
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Notes (Optional)
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Paid via GPay / Informs vegetarian food only"
-              className="input-field w-full px-3.5 py-2.5 text-xs"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-3">
+          {/* Sticky Bottom Action Bar (Always Visible above mobile keyboard) */}
+          <div className="p-3.5 sm:p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
