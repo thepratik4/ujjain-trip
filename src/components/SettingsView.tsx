@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { TripSettings, Member, Expense } from '../types';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { resolveImageUrl } from '../utils/currency';
 
 interface SettingsViewProps {
   settings: TripSettings;
@@ -45,15 +46,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const resolvedImage = resolveImageUrl(coverImage.trim());
     const updated: TripSettings = {
       trip_name: tripName.trim() || 'Ujjain Trip',
       subtitle: subtitle.trim() || 'Boys Trip • 2026',
       destination: destination.trim() || 'Ujjain, Madhya Pradesh',
       start_date: startDate || '2026-08-28',
-      end_date: endDate || '2026-09-2',
+      end_date: endDate || '2026-09-02',
       contribution_per_person: Number(contributionPerPerson) || 4000,
       currency: '₹',
-      cover_image: coverImage.trim() || undefined,
+      cover_image: resolvedImage || undefined,
     };
     onSaveSettings(updated);
     setSavedSuccess(true);
@@ -216,13 +218,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
             Trip Logo / Cover Image URL (Optional)
           </label>
-          <input
-            type="url"
-            value={coverImage}
-            onChange={(e) => setCoverImage(e.target.value)}
-            placeholder="https://..."
-            className="input-field w-full px-3.5 py-2 text-xs font-mono"
-          />
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+              {coverImage ? (
+                <img
+                  src={resolveImageUrl(coverImage)}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-lg">🛕</span>
+              )}
+            </div>
+            <input
+              type="url"
+              value={coverImage}
+              onChange={(e) => setCoverImage(e.target.value)}
+              placeholder="Paste Unsplash link or image URL..."
+              className="input-field w-full px-3.5 py-2 text-xs font-mono"
+            />
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">
+            You can paste direct image URLs or Unsplash links (e.g. <code>https://unsplash.com/photos/...</code>)
+          </p>
         </div>
 
         {/* Submit */}

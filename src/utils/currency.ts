@@ -144,3 +144,26 @@ export function numberToWordsMarathi(num: number): string {
   return `${result.trim()} रुपये फक्त`;
 }
 
+/**
+ * Automatically converts Unsplash webpage URLs to direct CDN image URLs
+ */
+export function resolveImageUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  // Already a direct image CDN or image file
+  if (trimmed.includes('images.unsplash.com') || trimmed.match(/\.(jpeg|jpg|png|webp|gif|svg)(\?.*)?$/i)) {
+    return trimmed;
+  }
+
+  // Handle Unsplash page link e.g. https://unsplash.com/photos/a-statue-of-a-woman-sitting-on-top-of-a-tree-tLbtZufIbNQ
+  const unsplashMatch = trimmed.match(/unsplash\.com\/photos\/(?:[\w-]*[-/])?([a-zA-Z0-9_-]+)/);
+  if (unsplashMatch && unsplashMatch[1]) {
+    const photoId = unsplashMatch[1];
+    return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&q=80&w=600`;
+  }
+
+  return trimmed;
+}
+

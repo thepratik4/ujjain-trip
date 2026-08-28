@@ -1,7 +1,7 @@
 import React from 'react';
 import { Database, Zap, CloudOff, User, Compass, Sparkles } from 'lucide-react';
 import { TripSettings, FinancialSummary } from '../types';
-import { formatINR } from '../utils/currency';
+import { formatINR, resolveImageUrl } from '../utils/currency';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
@@ -18,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   onQuickBackup,
 }) => {
   const isPositiveBalance = summary.availableBalance >= 0;
+  const resolvedCoverImage = resolveImageUrl(settings.cover_image);
 
   return (
     <header
@@ -39,9 +40,9 @@ export const Header: React.FC<HeaderProps> = ({
               border: '1px solid rgba(0,0,0,0.1)',
             }}
           >
-            {settings.cover_image ? (
+            {resolvedCoverImage ? (
               <img
-                src={settings.cover_image}
+                src={resolvedCoverImage}
                 alt="Trip Emblem"
                 className="w-full h-full object-cover"
                 onError={(e) => {
