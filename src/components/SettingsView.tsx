@@ -1,30 +1,21 @@
 import React, { useState } from 'react';
 import {
-  Settings as SettingsIcon,
   Save,
   Database,
   CheckCircle2,
-  FileSpreadsheet,
   Zap,
   CloudOff,
   Upload,
   RotateCcw,
-  Shield,
-  MapPin,
-  Calendar,
   Wallet,
 } from 'lucide-react';
-import { TripSettings, Member, Expense, ItineraryItem, TravelDetail, TripNote } from '../types';
-import { StorageService } from '../utils/storage';
+import { TripSettings, Member, Expense } from '../types';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface SettingsViewProps {
   settings: TripSettings;
   members: Member[];
   expenses: Expense[];
-  itinerary: ItineraryItem[];
-  travel: TravelDetail[];
-  notes: TripNote[];
   onSaveSettings: (newSettings: TripSettings) => void;
   onResetData: () => void;
   onImportData: (importedData: any) => void;
@@ -34,9 +25,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
   members,
   expenses,
-  itinerary,
-  travel,
-  notes,
   onSaveSettings,
   onResetData,
   onImportData,
@@ -50,7 +38,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     String(settings.contribution_per_person || 4000)
   );
   const [coverImage, setCoverImage] = useState(settings.cover_image || '');
-  const [passcodeEnabled, setPasscodeEnabled] = useState(settings.passcode_enabled ?? true);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,7 +51,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       contribution_per_person: Number(contributionPerPerson) || 4000,
       currency: '₹',
       cover_image: coverImage.trim() || undefined,
-      passcode_enabled: passcodeEnabled,
     };
     onSaveSettings(updated);
     setSavedSuccess(true);
@@ -76,9 +62,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       settings,
       members,
       expenses,
-      itinerary,
-      travel,
-      notes,
       exported_at: new Date().toISOString(),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -129,7 +112,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
               🛕
             </div>
-            <h3 className="text-sm font-bold text-slate-900">Trip Details & Budget</h3>
+            <h3 className="text-sm font-bold text-slate-900">Trip Budget & Configuration</h3>
           </div>
 
           {savedSuccess && (
@@ -205,7 +188,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Contribution Per Person (Key Fund Config) */}
+        {/* Contribution Per Person */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
             Fixed Contribution Per Confirmed Person (₹) *
@@ -221,7 +204,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <Wallet className="w-4 h-4 text-amber-600 absolute left-3 top-3" />
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            Expected Fund will automatically calculate as: Confirmed Members × ₹{contributionPerPerson}
+            Expected Fund automatically calculates as: Confirmed Members × ₹{contributionPerPerson}
           </p>
         </div>
 
@@ -239,26 +222,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           />
         </div>
 
-        {/* Passcode Security */}
-        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-          <div className="flex items-center gap-2.5">
-            <Shield className="w-4 h-4 text-slate-700" />
-            <div>
-              <span className="text-xs font-bold text-slate-900 block">App PIN Lock</span>
-              <span className="text-[11px] text-slate-500">Default PIN: 5050 (Admin PIN: 2020)</span>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={passcodeEnabled}
-              onChange={(e) => setPasscodeEnabled(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500" />
-          </label>
-        </div>
-
         {/* Submit */}
         <div className="pt-2">
           <button
@@ -266,7 +229,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="w-full py-3 rounded-2xl font-bold text-xs text-zinc-950 bg-amber-500 hover:bg-amber-400 transition-all shadow-md active:scale-97 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>Save Trip Settings</span>
+            <span>Save Settings</span>
           </button>
         </div>
       </form>
@@ -301,8 +264,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <p className="text-xs text-slate-500 leading-relaxed">
           {isSupabaseConfigured
-            ? '✅ App is connected to Supabase PostgreSQL database. All expenses, members, and itinerary sync in real time across all boys’ phones.'
-            : '⚠️ Running in offline-first localStorage mode. Data is stored safely in this browser. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env to enable multi-device sync.'}
+            ? '✅ App is connected to Supabase PostgreSQL database. All expenses and member payments sync in real time across devices.'
+            : '⚠️ Running in offline-first localStorage mode. Data is stored safely in this browser.'}
         </p>
       </div>
 

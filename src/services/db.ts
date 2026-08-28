@@ -3,18 +3,10 @@ import {
   TripSettings,
   Member,
   Expense,
-  ItineraryItem,
-  TravelDetail,
-  TripNote,
 } from '../types';
 import {
   StorageService,
   DEFAULT_SETTINGS,
-  DEFAULT_MEMBERS,
-  DEFAULT_EXPENSES,
-  DEFAULT_ITINERARY,
-  DEFAULT_TRAVEL,
-  DEFAULT_NOTES,
 } from '../utils/storage';
 
 export class DatabaseService {
@@ -48,7 +40,6 @@ export class DatabaseService {
         contribution_per_person: Number(data.contribution_per_person) || DEFAULT_SETTINGS.contribution_per_person,
         currency: data.currency || DEFAULT_SETTINGS.currency,
         cover_image: data.cover_image || DEFAULT_SETTINGS.cover_image,
-        passcode_enabled: data.passcode_enabled ?? DEFAULT_SETTINGS.passcode_enabled,
       };
 
       StorageService.saveSettings(settings);
@@ -74,7 +65,6 @@ export class DatabaseService {
             contribution_per_person: settings.contribution_per_person,
             currency: settings.currency,
             cover_image: settings.cover_image,
-            passcode_enabled: settings.passcode_enabled,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'id' }
@@ -302,308 +292,7 @@ export class DatabaseService {
     }
   }
 
-  /* ── 4. Itinerary ───────────────────────────────────── */
-  static async getItinerary(): Promise<ItineraryItem[]> {
-    if (!isSupabaseConfigured || !supabase) {
-      return StorageService.getItinerary();
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('trip_itinerary')
-        .select('*')
-        .order('date', { ascending: true })
-        .order('time_label', { ascending: true });
-
-      if (error || !data || data.length === 0) {
-        return StorageService.getItinerary();
-      }
-
-      const items: ItineraryItem[] = data
-        .filter((item) => item.is_active !== false)
-        .map((item) => ({
-          id: item.id,
-          trip_id: item.trip_id,
-          day_number: Number(item.day_number || 1),
-          date: item.date,
-          time_label: item.time_label,
-          title: item.title,
-          location: item.location || '',
-          map_url: item.map_url || '',
-          description: item.description || '',
-          notes: item.notes || '',
-          is_completed: Boolean(item.is_completed),
-          created_at: item.created_at || new Date().toISOString(),
-          updated_at: item.updated_at || new Date().toISOString(),
-          is_active: item.is_active ?? true,
-        }));
-
-      StorageService.saveItinerary(items);
-      return items;
-    } catch {
-      return StorageService.getItinerary();
-    }
-  }
-
-  static async saveItineraryItem(item: ItineraryItem): Promise<ItineraryItem> {
-    const list = StorageService.getItinerary();
-    const index = list.findIndex((i) => i.id === item.id);
-    const updated: ItineraryItem = {
-      ...item,
-      is_active: item.is_active ?? true,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (index >= 0) {
-      list[index] = updated;
-    } else {
-      list.push(updated);
-    }
-    StorageService.saveItinerary(list);
-
-    if (isSupabaseConfigured && supabase && this.isOnline()) {
-      try {
-        await supabase.from('trip_itinerary').upsert(
-          {
-            id: updated.id,
-            trip_id: 'default',
-            day_number: updated.day_number,
-            date: updated.date,
-            time_label: updated.time_label,
-            title: updated.title,
-            location: updated.location || null,
-            map_url: updated.map_url || null,
-            description: updated.description || null,
-            notes: updated.notes || null,
-            is_completed: Boolean(updated.is_completed),
-            is_active: updated.is_active,
-            created_at: updated.created_at,
-            updated_at: updated.updated_at,
-          },
-          { onConflict: 'id' }
-        );
-      } catch (err) {
-        console.error('Failed to upsert itinerary to Supabase:', err);
-      }
-    }
-
-    return updated;
-  }
-
-  static async deleteItineraryItem(id: string): Promise<void> {
-    const list = StorageService.getItinerary().filter((i) => i.id !== id);
-    StorageService.saveItinerary(list);
-
-    if (isSupabaseConfigured && supabase && this.isOnline()) {
-      try {
-        await supabase.from('trip_itinerary').update({ is_active: false }).eq('id', id);
-      } catch (err) {
-        console.error('Failed to delete itinerary in Supabase:', err);
-      }
-    }
-  }
-
-  /* ── 5. Travel Details ──────────────────────────────── */
-  static async getTravel(): Promise<TravelDetail[]> {
-    if (!isSupabaseConfigured || !supabase) {
-      return StorageService.getTravel();
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('trip_travel')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error || !data || data.length === 0) {
-        return StorageService.getTravel();
-      }
-
-      const list: TravelDetail[] = data
-        .filter((item) => item.is_active !== false)
-        .map((item) => ({
-          id: item.id,
-          trip_id: item.trip_id,
-          type: item.type,
-          mode: item.mode || '',
-          title: item.title,
-          booking_ref: item.booking_ref || '',
-          departure_station: item.departure_station || '',
-          arrival_station: item.arrival_station || '',
-          departure_time: item.departure_time || '',
-          arrival_time: item.arrival_time || '',
-          hotel_name: item.hotel_name || '',
-          address: item.address || '',
-          contact_number: item.contact_number || '',
-          map_url: item.map_url || '',
-          notes: item.notes || '',
-          created_at: item.created_at || new Date().toISOString(),
-          updated_at: item.updated_at || new Date().toISOString(),
-          is_active: item.is_active ?? true,
-        }));
-
-      StorageService.saveTravel(list);
-      return list;
-    } catch {
-      return StorageService.getTravel();
-    }
-  }
-
-  static async saveTravelDetail(detail: TravelDetail): Promise<TravelDetail> {
-    const list = StorageService.getTravel();
-    const index = list.findIndex((t) => t.id === detail.id);
-    const updated: TravelDetail = {
-      ...detail,
-      is_active: detail.is_active ?? true,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (index >= 0) {
-      list[index] = updated;
-    } else {
-      list.push(updated);
-    }
-    StorageService.saveTravel(list);
-
-    if (isSupabaseConfigured && supabase && this.isOnline()) {
-      try {
-        await supabase.from('trip_travel').upsert(
-          {
-            id: updated.id,
-            trip_id: 'default',
-            type: updated.type,
-            mode: updated.mode || null,
-            title: updated.title,
-            booking_ref: updated.booking_ref || null,
-            departure_station: updated.departure_station || null,
-            arrival_station: updated.arrival_station || null,
-            departure_time: updated.departure_time || null,
-            arrival_time: updated.arrival_time || null,
-            hotel_name: updated.hotel_name || null,
-            address: updated.address || null,
-            contact_number: updated.contact_number || null,
-            map_url: updated.map_url || null,
-            notes: updated.notes || null,
-            is_active: updated.is_active,
-            created_at: updated.created_at,
-            updated_at: updated.updated_at,
-          },
-          { onConflict: 'id' }
-        );
-      } catch (err) {
-        console.error('Failed to upsert travel detail in Supabase:', err);
-      }
-    }
-
-    return updated;
-  }
-
-  static async deleteTravelDetail(id: string): Promise<void> {
-    const list = StorageService.getTravel().filter((t) => t.id !== id);
-    StorageService.saveTravel(list);
-
-    if (isSupabaseConfigured && supabase && this.isOnline()) {
-      try {
-        await supabase.from('trip_travel').update({ is_active: false }).eq('id', id);
-      } catch (err) {
-        console.error('Failed to delete travel in Supabase:', err);
-      }
-    }
-  }
-
-  /* ── 6. Notes ───────────────────────────────────────── */
-  static async getNotes(): Promise<TripNote[]> {
-    if (!isSupabaseConfigured || !supabase) {
-      return StorageService.getNotes();
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('trip_notes')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error || !data || data.length === 0) {
-        return StorageService.getNotes();
-      }
-
-      const list: TripNote[] = data
-        .filter((item) => item.is_active !== false)
-        .map((item) => ({
-          id: item.id,
-          trip_id: item.trip_id,
-          title: item.title,
-          category: item.category,
-          content: item.content || '',
-          is_checklist: Boolean(item.is_checklist),
-          checklist_items: Array.isArray(item.checklist_items) ? item.checklist_items : [],
-          created_at: item.created_at || new Date().toISOString(),
-          updated_at: item.updated_at || new Date().toISOString(),
-          is_active: item.is_active ?? true,
-        }));
-
-      StorageService.saveNotes(list);
-      return list;
-    } catch {
-      return StorageService.getNotes();
-    }
-  }
-
-  static async saveNote(note: TripNote): Promise<TripNote> {
-    const list = StorageService.getNotes();
-    const index = list.findIndex((n) => n.id === note.id);
-    const updated: TripNote = {
-      ...note,
-      is_active: note.is_active ?? true,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (index >= 0) {
-      list[index] = updated;
-    } else {
-      list.unshift(updated);
-    }
-    StorageService.saveNotes(list);
-
-    if (isSupabaseConfigured && supabase && this.isOnline()) {
-      try {
-        await supabase.from('trip_notes').upsert(
-          {
-            id: updated.id,
-            trip_id: 'default',
-            title: updated.title,
-            category: updated.category,
-            content: updated.content,
-            is_checklist: Boolean(updated.is_checklist),
-            checklist_items: updated.checklist_items || [],
-            is_active: updated.is_active,
-            created_at: updated.created_at,
-            updated_at: updated.updated_at,
-          },
-          { onConflict: 'id' }
-        );
-      } catch (err) {
-        console.error('Failed to upsert note in Supabase:', err);
-      }
-    }
-
-    return updated;
-  }
-
-  static async deleteNote(id: string): Promise<void> {
-    const list = StorageService.getNotes().filter((n) => n.id !== id);
-    StorageService.saveNotes(list);
-
-    if (isSupabaseConfigured && supabase && this.isOnline()) {
-      try {
-        await supabase.from('trip_notes').update({ is_active: false }).eq('id', id);
-      } catch (err) {
-        console.error('Failed to delete note in Supabase:', err);
-      }
-    }
-  }
-
-  /* ── 7. Image Upload Helper ─────────────────────────── */
+  /* ── 4. Image Upload Helper ─────────────────────────── */
   static async uploadBillImage(file: File): Promise<string> {
     if (!isSupabaseConfigured || !supabase) {
       return new Promise((resolve) => {
@@ -649,7 +338,7 @@ export class DatabaseService {
     }
   }
 
-  /* ── 8. Realtime Channel Subscription ───────────────── */
+  /* ── 5. Realtime Channel Subscription ───────────────── */
   static subscribeToRealtime(onSync: () => void) {
     if (!isSupabaseConfigured || !supabase) {
       return () => {};
@@ -659,9 +348,6 @@ export class DatabaseService {
       .channel('ujjain_trip_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => onSync())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => onSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_itinerary' }, () => onSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_travel' }, () => onSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_notes' }, () => onSync())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_settings' }, () => onSync())
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {

@@ -8,9 +8,6 @@ import {
   Users,
   AlertTriangle,
   Sparkles,
-  CalendarDays,
-  FileText,
-  Clock,
   CheckCircle2,
   AlertCircle,
   FileImage,
@@ -26,8 +23,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
 } from 'recharts';
 import {
@@ -35,7 +30,6 @@ import {
   TripSettings,
   Member,
   Expense,
-  ItineraryItem,
 } from '../types';
 import { formatINR } from '../utils/currency';
 
@@ -44,13 +38,10 @@ interface DashboardProps {
   summary: FinancialSummary;
   members: Member[];
   expenses: Expense[];
-  itinerary: ItineraryItem[];
   onOpenAddExpense: () => void;
   onOpenAddMember: () => void;
-  onOpenAddItinerary: () => void;
-  onNavigateTab: (tab: any) => void;
+  onNavigateTab: (tab: 'dashboard' | 'members' | 'expenses' | 'settings') => void;
   onViewBillImage: (url: string) => void;
-  onToggleReimburse: (expenseId: string, isReimbursed: boolean) => void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -73,13 +64,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   summary,
   members,
   expenses,
-  itinerary,
   onOpenAddExpense,
   onOpenAddMember,
-  onOpenAddItinerary,
   onNavigateTab,
   onViewBillImage,
-  onToggleReimburse,
 }) => {
   // Category Breakdown for chart
   const categoryDataMap: Record<string, number> = {};
@@ -100,19 +88,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     (m) => m.status === 'Confirmed' && m.amount_paid < m.expected_contribution
   );
 
-  const upcomingItinerary = itinerary.slice(0, 3);
-
   return (
     <div className="space-y-5 pb-24 animate-fadeup">
       {/* ── 1. Hero Trip Card ─────────────────────────── */}
       <div
-        className="rounded-3xl p-5 text-white shadow-xl relative overflow-hidden"
+        className="rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #18181B 0%, #27272A 60%, #3F3F46 100%)',
           border: '1px solid rgba(255,255,255,0.1)',
         }}
       >
-        {/* Background glow decoration */}
         <div
           className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full opacity-20 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #EAB308 0%, transparent 70%)' }}
@@ -142,16 +127,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <button
-            onClick={() => onNavigateTab('fund')}
+            onClick={() => onNavigateTab('expenses')}
             className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all flex items-center gap-1 cursor-pointer"
           >
-            <span>Trip Fund</span>
+            <span>Fund Ledger</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-5 relative z-10 pt-3 border-t border-white/10">
+        <div className="grid grid-cols-2 gap-3 mt-5 relative z-10 pt-3 border-t border-white/10">
           <button
             onClick={onOpenAddExpense}
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-all shadow-md active:scale-97 cursor-pointer"
@@ -165,13 +150,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           >
             <Users className="w-4 h-4" />
             <span>Add Member / Pay</span>
-          </button>
-          <button
-            onClick={onOpenAddItinerary}
-            className="hidden sm:flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs bg-white/15 hover:bg-white/25 text-white transition-all border border-white/20 active:scale-97 cursor-pointer"
-          >
-            <CalendarDays className="w-4 h-4" />
-            <span>Add Itinerary</span>
           </button>
         </div>
       </div>
@@ -201,7 +179,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* 1. Trip Fund Collected */}
         <div
-          onClick={() => onNavigateTab('fund')}
+          onClick={() => onNavigateTab('expenses')}
           className="card p-4 transition-all hover:shadow-md cursor-pointer relative overflow-hidden"
         >
           <div className="flex items-center justify-between text-slate-500 mb-1.5">
@@ -239,7 +217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* 3. Available Balance */}
         <div
-          onClick={() => onNavigateTab('fund')}
+          onClick={() => onNavigateTab('expenses')}
           className="card p-4 transition-all hover:shadow-md cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 mb-1.5">
@@ -410,7 +388,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {formatINR(r.pending_reimbursement)} due
                       </div>
                       <button
-                        onClick={() => onNavigateTab('fund')}
+                        onClick={() => onNavigateTab('expenses')}
                         className="text-[10px] text-amber-700 font-bold hover:underline cursor-pointer"
                       >
                         Settle in Fund ➔
@@ -544,7 +522,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <button
                       onClick={() => onViewBillImage(exp.bill_image!)}
                       title="View Bill Photo"
-                      className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                      className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
                     >
                       <FileImage className="w-4 h-4" />
                     </button>
@@ -555,45 +533,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         )}
       </div>
-
-      {/* ── 8. Upcoming Itinerary Snapshot ───────────── */}
-      {upcomingItinerary.length > 0 && (
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-slate-700" />
-                Upcoming Trip Schedule
-              </h3>
-              <p className="text-xs text-slate-500">Itinerary for Ujjain darshan & activities</p>
-            </div>
-            <button
-              onClick={() => onNavigateTab('itinerary')}
-              className="text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
-            >
-              Full Schedule ➔
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {upcomingItinerary.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80"
-              >
-                <div className="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-900 font-extrabold text-[11px] shrink-0 text-center">
-                  <div>Day {item.day_number}</div>
-                  <div className="text-[9px] font-medium text-amber-700">{item.time_label}</div>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-slate-900">{item.title}</h4>
-                  <p className="text-[11px] text-slate-500 truncate">{item.location || item.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

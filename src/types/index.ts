@@ -29,7 +29,6 @@ export interface TripSettings {
   contribution_per_person: number;
   currency: string;
   cover_image?: string;
-  passcode_enabled?: boolean;
 }
 
 export interface Member {
@@ -63,74 +62,6 @@ export interface Expense {
   is_reimbursed?: boolean;
   bill_image?: string; // base64 or URL
   notes?: string;
-  created_at: string;
-  updated_at?: string;
-  is_active?: boolean;
-}
-
-export interface ItineraryItem {
-  id: string;
-  trip_id?: string;
-  day_number: number;
-  date: string; // YYYY-MM-DD
-  time_label: string; // e.g. "05:00 AM"
-  title: string;
-  location?: string;
-  map_url?: string;
-  description?: string;
-  notes?: string;
-  is_completed?: boolean;
-  created_at: string;
-  updated_at?: string;
-  is_active?: boolean;
-}
-
-export type TravelType = 'outbound' | 'return' | 'stay' | 'local';
-
-export interface TravelDetail {
-  id: string;
-  trip_id?: string;
-  type: TravelType;
-  mode?: string; // Train / Bus / Flight / Car / Auto
-  title: string;
-  booking_ref?: string; // PNR / Ticket / Hotel Booking ID
-  departure_station?: string;
-  arrival_station?: string;
-  departure_time?: string;
-  arrival_time?: string;
-  hotel_name?: string;
-  address?: string;
-  contact_number?: string;
-  map_url?: string;
-  notes?: string;
-  created_at: string;
-  updated_at?: string;
-  is_active?: boolean;
-}
-
-export type NoteCategory =
-  | 'Packing List'
-  | 'Important Contacts'
-  | 'Documents'
-  | 'Food & Food Places'
-  | 'Temple & Darshan Tips'
-  | 'Trip Rules'
-  | 'General';
-
-export interface ChecklistItem {
-  id: string;
-  text: string;
-  checked: boolean;
-}
-
-export interface TripNote {
-  id: string;
-  trip_id?: string;
-  title: string;
-  category: NoteCategory;
-  content: string;
-  is_checklist?: boolean;
-  checklist_items?: ChecklistItem[];
   created_at: string;
   updated_at?: string;
   is_active?: boolean;

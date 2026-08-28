@@ -3,7 +3,6 @@ import {
   Receipt,
   PlusCircle,
   Search,
-  SlidersHorizontal,
   Wallet,
   HandCoins,
   CreditCard,
@@ -14,14 +13,20 @@ import {
   Calendar,
   CheckCircle2,
   AlertCircle,
-  ChevronRight,
+  Download,
+  FileSpreadsheet,
+  TrendingDown,
   Sparkles,
 } from 'lucide-react';
-import { Expense, ExpenseCategory, ExpenseSource, PaymentMode, FinancialSummary } from '../types';
+import { Expense, ExpenseCategory, ExpenseSource, PaymentMode, FinancialSummary, TripSettings, Member } from '../types';
 import { formatINR } from '../utils/currency';
+import { generateTripFinancialReportPDF } from '../utils/pdfGenerator';
+import { StorageService } from '../utils/storage';
 
 interface ExpensesViewProps {
+  settings: TripSettings;
   expenses: Expense[];
+  members: Member[];
   summary: FinancialSummary;
   onOpenAddExpense: () => void;
   onEditExpense: (expense: Expense) => void;
@@ -46,7 +51,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export const ExpensesView: React.FC<ExpensesViewProps> = ({
+  settings,
   expenses,
+  members,
   summary,
   onOpenAddExpense,
   onEditExpense,
@@ -57,14 +64,32 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | ExpenseSource>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all');
-  const [modeFilter, setModeFilter] = useState<'all' | PaymentMode>('all');
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  const handleDownloadPDF = () => {
+    const doc = generateTripFinancialReportPDF(members, expenses, summary, settings);
+    doc.save(`${settings.trip_name.replace(/\s+/g, '_')}_Financial_Report.pdf`);
+    setDownloadSuccess(true);
+    setTimeout(() => setDownloadSuccess(false), 2500);
+  };
+
+  const handleExportCSV = () => {
+    const csv = StorageService.exportToCSV(members, expenses, settings);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${settings.trip_name.replace(/\s+/g, '_')}_Ledger.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const filteredExpenses = expenses.filter((e) => {
     if (e.is_active === false) return false;
 
     if (sourceFilter !== 'all' && e.source !== sourceFilter) return false;
     if (categoryFilter !== 'all' && e.category !== categoryFilter) return false;
-    if (modeFilter !== 'all' && e.payment_mode !== modeFilter) return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -79,65 +104,184 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     return true;
   });
 
+  const personalExpenses = expenses.filter((e) => e.source === 'personal' && e.is_active !== false);
+
   return (
-    <div className="space-y-4 pb-24 animate-fadeup">
-      {/* ── 1. Header & Title ─────────────────────────── */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-5 pb-24 animate-fadeup">
+      {/* ── 1. Top Header & Primary Action ───────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2
             className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900"
             style={{ fontFamily: 'var(--font-sans)' }}
           >
-            Trip Expenses
+            Fund & Expenses
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            {expenses.length} records • Total {formatINR(summary.totalExpenses)}
+            Common treasury, out-of-pocket reimbursements & expense ledger
           </p>
         </div>
 
-        <button
-          onClick={onOpenAddExpense}
-          className="flex items-center gap-1.5 py-2.5 px-4 rounded-2xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-all shadow-md active:scale-97 cursor-pointer"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>Add Expense</span>
-        </button>
-      </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>CSV</span>
+          </button>
 
-      {/* ── 2. Top Summary Matrix ──────────────────────── */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="card p-3">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-            Total Spent
-          </span>
-          <div className="text-base sm:text-lg font-black text-rose-600 mt-0.5">
-            {formatINR(summary.totalExpenses)}
-          </div>
-          <span className="text-[10px] text-slate-400">All trip costs</span>
-        </div>
+          <button
+            onClick={handleDownloadPDF}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 shadow-xs cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{downloadSuccess ? 'Downloaded!' : 'PDF'}</span>
+          </button>
 
-        <div className="card p-3">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-            Common Fund
-          </span>
-          <div className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
-            {formatINR(summary.totalTripFundExpenses)}
-          </div>
-          <span className="text-[10px] text-slate-400">From shared pool</span>
-        </div>
-
-        <div className="card p-3">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-            Personal Due
-          </span>
-          <div className="text-base sm:text-lg font-black text-amber-700 mt-0.5">
-            {formatINR(summary.totalReimbursementsDue)}
-          </div>
-          <span className="text-[10px] text-slate-400">Reimbursements</span>
+          <button
+            onClick={onOpenAddExpense}
+            className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-all shadow-md active:scale-97 cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Add Expense</span>
+          </button>
         </div>
       </div>
 
-      {/* ── 3. Search & Filter Controls ───────────────── */}
+      {/* ── 2. Master Fund Summary Card ──────────────── */}
+      <div
+        className="rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #18181B 0%, #27272A 100%)',
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 block">
+              Available Balance
+            </span>
+            <div
+              className={`text-2xl sm:text-3xl font-black mt-0.5 ${
+                summary.availableBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'
+              }`}
+            >
+              {formatINR(summary.availableBalance)}
+            </div>
+            <span className="text-[10px] text-zinc-400">Cash in pool</span>
+          </div>
+
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+              Collected Fund
+            </span>
+            <div className="text-xl sm:text-2xl font-black text-white mt-0.5">
+              {formatINR(summary.totalCollected)}
+            </div>
+            <span className="text-[10px] text-zinc-400">of {formatINR(summary.expectedFund)} expected</span>
+          </div>
+
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+              Fund Spent
+            </span>
+            <div className="text-xl sm:text-2xl font-black text-rose-400 mt-0.5">
+              {formatINR(summary.totalTripFundExpenses)}
+            </div>
+            <span className="text-[10px] text-zinc-400">Drawn from pool</span>
+          </div>
+
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+              Reimbursements
+            </span>
+            <div className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">
+              {formatINR(summary.totalReimbursementsDue)}
+            </div>
+            <span className="text-[10px] text-zinc-400">Personal payback</span>
+          </div>
+        </div>
+
+        {/* Collection progress */}
+        <div className="mt-4 pt-3 border-t border-white/10 relative z-10">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="text-zinc-300 font-medium">Fund Collection Progress</span>
+            <span className="text-amber-400 font-bold">{summary.collectionProgressPercent}%</span>
+          </div>
+          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700 bg-amber-400"
+              style={{ width: `${summary.collectionProgressPercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. Out-of-Pocket Reimbursements Hub ──────── */}
+      {personalExpenses.length > 0 && (
+        <div className="card p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <HandCoins className="w-4 h-4 text-amber-600" />
+                Personal Out-of-Pocket Expenses
+              </h3>
+              <p className="text-xs text-slate-500">Expenses paid personally by boys that need payback</p>
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
+              {formatINR(summary.totalReimbursementsDue)} Due
+            </span>
+          </div>
+
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {personalExpenses.map((exp) => (
+              <div
+                key={exp.id}
+                className="flex items-center justify-between p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 gap-3 text-xs"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-slate-900 truncate">{exp.title}</h4>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900">
+                      {exp.category}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Paid by <strong>{exp.paid_by_name}</strong> on {exp.date}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <span className="font-extrabold text-slate-900 block">{formatINR(exp.amount)}</span>
+                    <span
+                      className={`text-[10px] font-bold ${
+                        exp.is_reimbursed ? 'text-emerald-700' : 'text-amber-800'
+                      }`}
+                    >
+                      {exp.is_reimbursed ? '✓ Settled' : '⌛ Pending'}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => onToggleReimburse(exp.id, !exp.is_reimbursed)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all shadow-xs cursor-pointer ${
+                      exp.is_reimbursed
+                        ? 'bg-slate-100 text-slate-600 border border-slate-300'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    }`}
+                  >
+                    {exp.is_reimbursed ? 'Revert' : 'Mark Settled'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── 4. Search & Filter Controls ───────────────── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
@@ -145,13 +289,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by expense, category, who paid..."
+            placeholder="Search expenses by title, category, who paid..."
             className="w-full text-xs font-medium bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-xs text-slate-400 hover:text-slate-600 font-bold"
+              className="text-xs text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
             >
               Clear
             </button>
@@ -209,12 +353,12 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         </div>
       </div>
 
-      {/* ── 4. Expenses List ──────────────────────────── */}
+      {/* ── 5. Full Expenses Ledger ───────────────────── */}
       {filteredExpenses.length === 0 ? (
         <div className="card p-10 text-center text-slate-400 space-y-2">
           <Receipt className="w-10 h-10 mx-auto opacity-30 text-slate-600" />
           <h4 className="text-sm font-bold text-slate-700">No expenses found</h4>
-          <p className="text-xs text-slate-400">Try adjusting your filters or search query</p>
+          <p className="text-xs text-slate-400">Try adjusting your filters or click "Add Expense"</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -304,7 +448,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                           : 'bg-emerald-600 text-white border-emerald-600'
                       }`}
                     >
-                      {exp.is_reimbursed ? 'Revert to Due' : 'Mark Settled'}
+                      {exp.is_reimbursed ? 'Revert' : 'Mark Settled'}
                     </button>
                   )}
                 </div>
