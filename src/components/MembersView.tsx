@@ -83,10 +83,6 @@ export const MembersView: React.FC<MembersViewProps> = ({
     return a.name.localeCompare(b.name);
   });
 
-  const unpaidMembers = members.filter(
-    (m) => m.status === 'Confirmed' && m.amount_paid < m.expected_contribution && m.is_active !== false
-  );
-
   return (
     <div className="space-y-4 pb-24 animate-fadeup">
       {/* ── 1. Header & Title ─────────────────────────── */}
@@ -158,39 +154,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       </div>
 
-      {/* ── 3. Unpaid Members Top Banner (If Any) ──────── */}
-      {unpaidMembers.length > 0 && (
-        <div className="card p-4 bg-amber-50/80 border border-amber-200 space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              Pending Payment from {unpaidMembers.length} {unpaidMembers.length === 1 ? 'Person' : 'People'}
-            </h3>
-            <span className="text-xs font-black text-amber-900">
-              {formatINR(summary.pendingCollection)} Due
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            {unpaidMembers.map((m) => {
-              const pending = m.expected_contribution - m.amount_paid;
-              return (
-                <div
-                  key={m.id}
-                  onClick={() => onQuickPayMember(m)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-amber-300 shadow-xs cursor-pointer hover:bg-amber-100/50 transition-all text-xs"
-                >
-                  <span className="font-bold text-slate-900">{m.name}:</span>
-                  <span className="font-extrabold text-rose-600">{formatINR(pending)} pending</span>
-                  <span className="text-[10px] text-amber-700 underline font-semibold">Pay ➔</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── 4. Search & Filter Bar ───────────────────── */}
+      {/* ── 3. Search & Filter Bar ───────────────────── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />

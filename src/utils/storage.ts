@@ -16,11 +16,10 @@ export const DEFAULT_SETTINGS: TripSettings = {
   trip_name: 'Ujjain Trip',
   subtitle: 'Boys Trip • 2026',
   destination: 'Ujjain, Madhya Pradesh',
-  start_date: '2026-09-18',
-  end_date: '2026-09-21',
+  start_date: '2026-08-28',
+  end_date: '2026-09-02',
   contribution_per_person: 4000,
   currency: '₹',
-  cover_image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=800',
 };
 
 export const DEFAULT_MEMBERS: Member[] = [];

@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { TripSettings, Member, Expense } from '../types';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { resolveImageUrl } from '../utils/currency';
 
 interface SettingsViewProps {
   settings: TripSettings;
@@ -41,12 +40,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [contributionPerPerson, setContributionPerPerson] = useState<string>(
     String(settings.contribution_per_person || 4000)
   );
-  const [coverImage, setCoverImage] = useState(settings.cover_image || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const resolvedImage = resolveImageUrl(coverImage.trim());
     const updated: TripSettings = {
       trip_name: tripName.trim() || 'Ujjain Trip',
       subtitle: subtitle.trim() || 'Boys Trip • 2026',
@@ -55,7 +52,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       end_date: endDate || '2026-09-02',
       contribution_per_person: Number(contributionPerPerson) || 4000,
       currency: '₹',
-      cover_image: resolvedImage || undefined,
     };
     onSaveSettings(updated);
     setSavedSuccess(true);
@@ -210,39 +206,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Expected Fund automatically calculates as: Confirmed Members × ₹{contributionPerPerson}
-          </p>
-        </div>
-
-        {/* Cover Emblem URL */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-            Trip Logo / Cover Image URL (Optional)
-          </label>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-              {coverImage ? (
-                <img
-                  src={resolveImageUrl(coverImage)}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <span className="text-lg">🛕</span>
-              )}
-            </div>
-            <input
-              type="url"
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-              placeholder="Paste Unsplash link or image URL..."
-              className="input-field w-full px-3.5 py-2 text-xs font-mono"
-            />
-          </div>
-          <p className="text-[10px] text-slate-500 mt-1">
-            You can paste direct image URLs or Unsplash links (e.g. <code>https://unsplash.com/photos/...</code>)
           </p>
         </div>
 

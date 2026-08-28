@@ -1,7 +1,7 @@
 import React from 'react';
 import { Database, Zap, CloudOff, User, Compass, Sparkles } from 'lucide-react';
 import { TripSettings, FinancialSummary } from '../types';
-import { formatINR, resolveImageUrl } from '../utils/currency';
+import { formatINR } from '../utils/currency';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
@@ -18,7 +18,6 @@ export const Header: React.FC<HeaderProps> = ({
   onQuickBackup,
 }) => {
   const isPositiveBalance = summary.availableBalance >= 0;
-  const resolvedCoverImage = resolveImageUrl(settings.cover_image);
 
   return (
     <header
@@ -34,24 +33,13 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3 cursor-pointer min-w-0" onClick={onOpenSettings}>
           {/* Logo square */}
           <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative text-xl"
             style={{
               backgroundColor: 'var(--color-primary)',
               border: '1px solid rgba(0,0,0,0.1)',
             }}
           >
-            {resolvedCoverImage ? (
-              <img
-                src={resolvedCoverImage}
-                alt="Trip Emblem"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <span className="text-xl">🛕</span>
-            )}
+            <span>🛕</span>
           </div>
 
           <div className="min-w-0">

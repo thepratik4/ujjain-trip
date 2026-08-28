@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS ujjain_settings (
   trip_name TEXT NOT NULL DEFAULT 'Ujjain Trip',
   subtitle TEXT DEFAULT 'Boys Trip • 2026',
   destination TEXT DEFAULT 'Ujjain, Madhya Pradesh',
-  start_date TEXT DEFAULT '2026-09-18',
-  end_date TEXT DEFAULT '2026-09-21',
+  start_date TEXT DEFAULT '2026-08-28',
+  end_date TEXT DEFAULT '2026-09-02',
   contribution_per_person NUMERIC NOT NULL DEFAULT 4000,
   currency TEXT DEFAULT '₹',
   cover_image TEXT,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS ujjain_settings (
 
 -- Insert default settings row if not exists
 INSERT INTO ujjain_settings (id, trip_name, subtitle, destination, start_date, end_date, contribution_per_person)
-VALUES ('default', 'Ujjain Trip', 'Boys Trip • 2026', 'Ujjain, Madhya Pradesh', '2026-09-18', '2026-09-21', 4000)
+VALUES ('default', 'Ujjain Trip', 'Boys Trip • 2026', 'Ujjain, Madhya Pradesh', '2026-08-28', '2026-09-02', 4000)
 ON CONFLICT (id) DO NOTHING;
 
 
