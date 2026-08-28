@@ -63,6 +63,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | ExpenseSource>('all');
+  const [modeFilter, setModeFilter] = useState<'all' | PaymentMode>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all');
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
@@ -89,6 +90,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     if (e.is_active === false) return false;
 
     if (sourceFilter !== 'all' && e.source !== sourceFilter) return false;
+    if (modeFilter !== 'all' && e.payment_mode !== modeFilter) return false;
     if (categoryFilter !== 'all' && e.category !== categoryFilter) return false;
 
     if (searchQuery.trim()) {
@@ -118,7 +120,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             Fund & Expenses
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Common treasury, out-of-pocket reimbursements & expense ledger
+            Common treasury, online vs cash breakdown & expenses ledger
           </p>
         </div>
 
@@ -149,7 +151,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         </div>
       </div>
 
-      {/* ── 2. Master Fund Summary Card ──────────────── */}
+      {/* ── 2. Master Fund Summary Card with Online vs Cash Split ── */}
       <div
         className="rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden"
         style={{
@@ -158,6 +160,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         }}
       >
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
+          {/* Available Balance */}
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 block">
               Available Balance
@@ -169,9 +172,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             >
               {formatINR(summary.availableBalance)}
             </div>
-            <span className="text-[10px] text-zinc-400">Cash in pool</span>
+            <div className="text-[10px] text-zinc-300 mt-1 flex flex-col gap-0.5 border-t border-white/10 pt-1">
+              <span className="text-blue-300 font-semibold">💳 UPI: {formatINR(summary.balanceOnline)}</span>
+              <span className="text-amber-300 font-semibold">💵 Cash: {formatINR(summary.balanceCash)}</span>
+            </div>
           </div>
 
+          {/* Collected Fund */}
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
               Collected Fund
@@ -179,9 +186,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             <div className="text-xl sm:text-2xl font-black text-white mt-0.5">
               {formatINR(summary.totalCollected)}
             </div>
-            <span className="text-[10px] text-zinc-400">of {formatINR(summary.expectedFund)} expected</span>
+            <div className="text-[10px] text-zinc-300 mt-1 flex flex-col gap-0.5 border-t border-white/10 pt-1">
+              <span className="text-blue-300">💳 UPI: {formatINR(summary.collectedOnline)}</span>
+              <span className="text-amber-300">💵 Cash: {formatINR(summary.collectedCash)}</span>
+            </div>
           </div>
 
+          {/* Fund Spent */}
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
               Fund Spent
@@ -189,9 +200,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             <div className="text-xl sm:text-2xl font-black text-rose-400 mt-0.5">
               {formatINR(summary.totalTripFundExpenses)}
             </div>
-            <span className="text-[10px] text-zinc-400">Drawn from pool</span>
+            <div className="text-[10px] text-zinc-300 mt-1 flex flex-col gap-0.5 border-t border-white/10 pt-1">
+              <span className="text-blue-300">💳 UPI: {formatINR(summary.expensesOnline)}</span>
+              <span className="text-amber-300">💵 Cash: {formatINR(summary.expensesCash)}</span>
+            </div>
           </div>
 
+          {/* Reimbursements */}
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
               Reimbursements
@@ -199,7 +214,10 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             <div className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">
               {formatINR(summary.totalReimbursementsDue)}
             </div>
-            <span className="text-[10px] text-zinc-400">Personal payback</span>
+            <div className="text-[10px] text-zinc-300 mt-1 flex flex-col gap-0.5 border-t border-white/10 pt-1">
+              <span className="text-zinc-400">Total out-of-pocket</span>
+              <span className="text-amber-300 font-semibold">{formatINR(summary.totalPersonalExpenses)}</span>
+            </div>
           </div>
         </div>
 
@@ -245,6 +263,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     <h4 className="font-bold text-slate-900 truncate">{exp.title}</h4>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900">
                       {exp.category}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                      {exp.payment_mode}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-600 mt-0.5">
@@ -302,26 +323,51 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
           )}
         </div>
 
-        {/* Source Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-[11px] font-bold text-slate-500 mr-1">Source:</span>
-          {[
-            { id: 'all', label: 'All Expenses' },
-            { id: 'trip_fund', label: '🏛️ Common Fund' },
-            { id: 'personal', label: '👤 Personal Out-of-Pocket' },
-          ].map((src) => (
-            <button
-              key={src.id}
-              onClick={() => setSourceFilter(src.id as any)}
-              className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all border cursor-pointer ${
-                sourceFilter === src.id
-                  ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {src.label}
-            </button>
-          ))}
+        {/* Source & Payment Mode Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {/* Source Filter */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-slate-500 mr-0.5">Source:</span>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'trip_fund', label: '🏛️ Fund' },
+              { id: 'personal', label: '👤 Personal' },
+            ].map((src) => (
+              <button
+                key={src.id}
+                onClick={() => setSourceFilter(src.id as any)}
+                className={`px-2 py-1 rounded-xl font-bold text-[11px] transition-all border cursor-pointer ${
+                  sourceFilter === src.id
+                    ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {src.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Payment Mode Filter */}
+          <div className="flex items-center gap-1 ml-auto sm:ml-2">
+            <span className="text-[11px] font-bold text-slate-500 mr-0.5">Mode:</span>
+            {[
+              { id: 'all', label: 'All Modes' },
+              { id: 'UPI/Online', label: '💳 Online' },
+              { id: 'Cash', label: '💵 Cash' },
+            ].map((pm) => (
+              <button
+                key={pm.id}
+                onClick={() => setModeFilter(pm.id as any)}
+                className={`px-2 py-1 rounded-xl font-bold text-[11px] transition-all border cursor-pointer ${
+                  modeFilter === pm.id
+                    ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {pm.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Category Filter Pills (Scrollable) */}
@@ -389,6 +435,22 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                         {exp.source === 'trip_fund' ? '🏛️ Common Fund' : '👤 Personal'}
                       </span>
 
+                      {/* Payment Mode badge */}
+                      <span
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 ${
+                          exp.payment_mode === 'Cash'
+                            ? 'bg-amber-100 text-amber-900'
+                            : 'bg-blue-100 text-blue-900'
+                        }`}
+                      >
+                        {exp.payment_mode === 'Cash' ? (
+                          <Banknote className="w-3 h-3 text-amber-700" />
+                        ) : (
+                          <CreditCard className="w-3 h-3 text-blue-700" />
+                        )}
+                        <span>{exp.payment_mode}</span>
+                      </span>
+
                       {/* Reimbursement tag for personal */}
                       {exp.source === 'personal' && (
                         <span
@@ -414,15 +476,6 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3 text-slate-400" />
                         {exp.date}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        {exp.payment_mode === 'Cash' ? (
-                          <Banknote className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <CreditCard className="w-3 h-3 text-amber-600" />
-                        )}
-                        {exp.payment_mode}
                       </span>
                     </div>
 

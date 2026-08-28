@@ -12,7 +12,7 @@ import {
   Clock,
   ArrowDownCircle,
 } from 'lucide-react';
-import { Member, MemberStatus, FinancialSummary } from '../types';
+import { Member, MemberStatus, PaymentMode, FinancialSummary } from '../types';
 import { formatINR } from '../utils/currency';
 
 interface MembersViewProps {
@@ -35,6 +35,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | MemberStatus>('All');
   const [paymentFilter, setPaymentFilter] = useState<'All' | 'Paid' | 'Partial' | 'Pending'>('All');
+  const [modeFilter, setModeFilter] = useState<'All' | PaymentMode>('All');
 
   // Filter members
   const filtered = members.filter((m) => {
@@ -51,6 +52,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
     )
       return false;
     if (paymentFilter === 'Pending' && m.amount_paid > 0) return false;
+
+    // Payment Mode filter
+    if (modeFilter !== 'All' && m.amount_paid > 0 && m.payment_mode !== modeFilter) return false;
 
     // Search query
     if (searchQuery.trim()) {
@@ -104,11 +108,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
           className="flex items-center gap-1.5 py-2.5 px-4 rounded-2xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-all shadow-md active:scale-97 cursor-pointer"
         >
           <PlusCircle className="w-4 h-4" />
-          <span>Add Member</span>
+          <span>Record Payment</span>
         </button>
       </div>
 
-      {/* ── 2. Top Stats Matrix ──────────────────────── */}
+      {/* ── 2. Top Stats Matrix with Cash/Online split ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <div className="card p-3">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
@@ -137,7 +141,10 @@ export const MembersView: React.FC<MembersViewProps> = ({
           <div className="text-lg font-black text-emerald-700 mt-0.5">
             {formatINR(summary.totalCollected)}
           </div>
-          <span className="text-[10px] text-emerald-600 font-semibold">{summary.collectionProgressPercent}% collected</span>
+          <div className="text-[10px] text-slate-600 mt-0.5 flex flex-col gap-0.5">
+            <span className="text-blue-700 font-semibold">💳 UPI: {formatINR(summary.collectedOnline)}</span>
+            <span className="text-amber-800 font-semibold">💵 Cash: {formatINR(summary.collectedCash)}</span>
+          </div>
         </div>
 
         <div className="card p-3">
@@ -147,7 +154,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
           <div className="text-lg font-black text-rose-600 mt-0.5">
             {formatINR(summary.pendingCollection)}
           </div>
-          <span className="text-[10px] text-slate-500">{summary.unpaidMembersCount} unpaid</span>
+          <span className="text-[10px] text-slate-500">{summary.unpaidMembersCount} members due</span>
         </div>
       </div>
 
@@ -205,36 +212,64 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-[11px] font-bold text-slate-500 mr-1">Status:</span>
-          {(['All', 'Confirmed', 'Maybe', 'Not Going'] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-2.5 py-1 rounded-xl font-semibold text-[11px] transition-all border cursor-pointer ${
-                statusFilter === st
-                  ? 'bg-zinc-900 text-white border-zinc-900'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {/* Status */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-slate-500 mr-0.5">Status:</span>
+            {(['All', 'Confirmed', 'Maybe', 'Not Going'] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-2 py-1 rounded-xl font-semibold text-[11px] transition-all border cursor-pointer ${
+                  statusFilter === st
+                    ? 'bg-zinc-900 text-white border-zinc-900'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
 
-          <span className="text-[11px] font-bold text-slate-500 ml-2 mr-1">Payment:</span>
-          {(['All', 'Paid', 'Partial', 'Pending'] as const).map((pf) => (
-            <button
-              key={pf}
-              onClick={() => setPaymentFilter(pf)}
-              className={`px-2.5 py-1 rounded-xl font-semibold text-[11px] transition-all border cursor-pointer ${
-                paymentFilter === pf
-                  ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {pf}
-            </button>
-          ))}
+          {/* Payment */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-slate-500 mr-0.5">Payment:</span>
+            {(['All', 'Paid', 'Partial', 'Pending'] as const).map((pf) => (
+              <button
+                key={pf}
+                onClick={() => setPaymentFilter(pf)}
+                className={`px-2 py-1 rounded-xl font-semibold text-[11px] transition-all border cursor-pointer ${
+                  paymentFilter === pf
+                    ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {pf}
+              </button>
+            ))}
+          </div>
+
+          {/* Mode */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-slate-500 mr-0.5">Mode:</span>
+            {[
+              { id: 'All', label: 'All' },
+              { id: 'UPI/Online', label: '💳 Online' },
+              { id: 'Cash', label: '💵 Cash' },
+            ].map((pm) => (
+              <button
+                key={pm.id}
+                onClick={() => setModeFilter(pm.id as any)}
+                className={`px-2 py-1 rounded-xl font-semibold text-[11px] transition-all border cursor-pointer ${
+                  modeFilter === pm.id
+                    ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {pm.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -313,11 +348,12 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       {m.amount_paid > 0 && (
                         <div className="flex items-center gap-1 mt-1 text-xs text-slate-500 font-medium">
                           {m.payment_mode === 'Cash' ? (
-                            <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                            <Banknote className="w-3.5 h-3.5 text-amber-600" />
                           ) : (
-                            <CreditCard className="w-3.5 h-3.5 text-amber-600" />
+                            <CreditCard className="w-3.5 h-3.5 text-blue-600" />
                           )}
                           <span>Paid via {m.payment_mode}</span>
+                          {m.payment_date && <span className="text-slate-400">• {m.payment_date}</span>}
                         </div>
                       )}
 

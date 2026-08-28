@@ -70,6 +70,8 @@ export function generateTripFinancialReportPDF(
     body: [
       ['Contribution Per Person', `${formatINR(summary.contributionPerPerson, 'Rs.')} per confirmed person`],
       ['Confirmed Group Members', `${summary.confirmedMembersCount} confirmed out of ${summary.totalMembersCount} total members`],
+      ['Online / UPI Pool Balance', `${formatINR(summary.balanceOnline, 'Rs.')} (Collected: ${formatINR(summary.collectedOnline, 'Rs.')}, Spent: ${formatINR(summary.expensesOnline, 'Rs.')})`],
+      ['Cash in Hand Pool Balance', `${formatINR(summary.balanceCash, 'Rs.')} (Collected: ${formatINR(summary.collectedCash, 'Rs.')}, Spent: ${formatINR(summary.expensesCash, 'Rs.')})`],
       ['Member Payment Status', `${summary.paidMembersCount} Paid in Full, ${summary.partialMembersCount} Partial, ${summary.unpaidMembersCount} Pending`],
       ['Collection Progress', `${summary.collectionProgressPercent}% (${formatINR(summary.totalCollected, 'Rs.')} of ${formatINR(summary.expectedFund, 'Rs.')})`],
       ['Personal Expenses (Reimbursements Due)', `${formatINR(summary.totalReimbursementsDue, 'Rs.')} due to members`],

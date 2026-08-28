@@ -82,12 +82,18 @@ export interface FinancialSummary {
   totalMembersCount: number;
   expectedFund: number;
   totalCollected: number;
+  collectedOnline: number;
+  collectedCash: number;
   pendingCollection: number;
   collectionProgressPercent: number;
   totalTripFundExpenses: number;
   totalPersonalExpenses: number;
   totalExpenses: number;
+  expensesOnline: number;
+  expensesCash: number;
   availableBalance: number;
+  balanceOnline: number;
+  balanceCash: number;
   shortfall: number;
   totalReimbursementsDue: number;
   reimbursements: ReimbursementItem[];

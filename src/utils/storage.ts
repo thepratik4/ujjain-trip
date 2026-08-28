@@ -118,7 +118,29 @@ export class StorageService {
     const totalPersonalExpenses = personalExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
     const totalExpenses = totalTripFundExpenses + totalPersonalExpenses;
 
-    // Available cash balance = Actual collected - expenses drawn from common trip fund
+    // Inflows breakdown by Online vs Cash
+    const collectedOnline = activeMembers.reduce(
+      (sum, m) => sum + (m.payment_mode === 'Cash' ? 0 : Number(m.amount_paid) || 0),
+      0
+    );
+    const collectedCash = activeMembers.reduce(
+      (sum, m) => sum + (m.payment_mode === 'Cash' ? Number(m.amount_paid) || 0 : 0),
+      0
+    );
+
+    // Expenses breakdown by Online vs Cash (from common trip fund)
+    const expensesOnline = tripFundExpenses.reduce(
+      (sum, e) => sum + (e.payment_mode === 'Cash' ? 0 : Number(e.amount) || 0),
+      0
+    );
+    const expensesCash = tripFundExpenses.reduce(
+      (sum, e) => sum + (e.payment_mode === 'Cash' ? Number(e.amount) || 0 : 0),
+      0
+    );
+
+    // Balances
+    const balanceOnline = collectedOnline - expensesOnline;
+    const balanceCash = collectedCash - expensesCash;
     const availableBalance = totalCollected - totalTripFundExpenses;
     const shortfall = availableBalance < 0 ? Math.abs(availableBalance) : 0;
 
@@ -169,12 +191,18 @@ export class StorageService {
       totalMembersCount,
       expectedFund,
       totalCollected,
+      collectedOnline,
+      collectedCash,
       pendingCollection,
       collectionProgressPercent,
       totalTripFundExpenses,
       totalPersonalExpenses,
       totalExpenses,
+      expensesOnline,
+      expensesCash,
       availableBalance,
+      balanceOnline,
+      balanceCash,
       shortfall,
       totalReimbursementsDue,
       reimbursements,
