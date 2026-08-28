@@ -22,7 +22,7 @@ export class DatabaseService {
 
     try {
       const { data, error } = await supabase
-        .from('trip_settings')
+        .from('ujjain_settings')
         .select('*')
         .eq('id', 'default')
         .single();
@@ -54,7 +54,7 @@ export class DatabaseService {
 
     if (isSupabaseConfigured && supabase && this.isOnline()) {
       try {
-        await supabase.from('trip_settings').upsert(
+        await supabase.from('ujjain_settings').upsert(
           {
             id: 'default',
             trip_name: settings.trip_name,
@@ -83,11 +83,11 @@ export class DatabaseService {
 
     try {
       const { data, error } = await supabase
-        .from('trip_members')
+        .from('ujjain_members')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error || !data || data.length === 0) {
+      if (error || !data) {
         return StorageService.getMembers();
       }
 
@@ -150,7 +150,7 @@ export class DatabaseService {
           created_at: updatedMember.created_at,
           updated_at: updatedMember.updated_at,
         };
-        await supabase.from('trip_members').upsert(payload, { onConflict: 'id' });
+        await supabase.from('ujjain_members').upsert(payload, { onConflict: 'id' });
       } catch (err) {
         console.error('Failed to upsert member to Supabase:', err);
       }
@@ -165,7 +165,7 @@ export class DatabaseService {
 
     if (isSupabaseConfigured && supabase && this.isOnline()) {
       try {
-        await supabase.from('trip_members').update({ is_active: false }).eq('id', id);
+        await supabase.from('ujjain_members').update({ is_active: false }).eq('id', id);
       } catch (err) {
         console.error('Failed to soft delete member in Supabase:', err);
       }
@@ -180,11 +180,11 @@ export class DatabaseService {
 
     try {
       const { data, error } = await supabase
-        .from('trip_expenses')
+        .from('ujjain_expenses')
         .select('*')
         .order('date', { ascending: false });
 
-      if (error || !data || data.length === 0) {
+      if (error || !data) {
         return StorageService.getExpenses();
       }
 
@@ -255,7 +255,7 @@ export class DatabaseService {
           created_at: updatedExpense.created_at,
           updated_at: updatedExpense.updated_at,
         };
-        await supabase.from('trip_expenses').upsert(payload, { onConflict: 'id' });
+        await supabase.from('ujjain_expenses').upsert(payload, { onConflict: 'id' });
       } catch (err) {
         console.error('Failed to upsert expense to Supabase:', err);
       }
@@ -272,7 +272,7 @@ export class DatabaseService {
 
     if (isSupabaseConfigured && supabase && this.isOnline()) {
       try {
-        await supabase.from('trip_expenses').update({ is_reimbursed: isReimbursed }).eq('id', expenseId);
+        await supabase.from('ujjain_expenses').update({ is_reimbursed: isReimbursed }).eq('id', expenseId);
       } catch (err) {
         console.error('Failed to toggle reimbursement in Supabase:', err);
       }
@@ -285,7 +285,7 @@ export class DatabaseService {
 
     if (isSupabaseConfigured && supabase && this.isOnline()) {
       try {
-        await supabase.from('trip_expenses').update({ is_active: false }).eq('id', id);
+        await supabase.from('ujjain_expenses').update({ is_active: false }).eq('id', id);
       } catch (err) {
         console.error('Failed to soft delete expense in Supabase:', err);
       }
@@ -308,7 +308,7 @@ export class DatabaseService {
       const filePath = `trip-bills/${fileName}`;
 
       const { error } = await supabase.storage
-        .from('expense-bills')
+        .from('ujjain-bills')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
@@ -324,7 +324,7 @@ export class DatabaseService {
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from('expense-bills')
+        .from('ujjain-bills')
         .getPublicUrl(filePath);
 
       return publicUrlData.publicUrl;
@@ -346,9 +346,9 @@ export class DatabaseService {
 
     const channel = supabase
       .channel('ujjain_trip_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => onSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => onSync())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_settings' }, () => onSync())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ujjain_members' }, () => onSync())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ujjain_expenses' }, () => onSync())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ujjain_settings' }, () => onSync())
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('⚡ Connected to Ujjain Trip Realtime Sync');
