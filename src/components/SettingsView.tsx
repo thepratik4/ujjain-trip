@@ -8,6 +8,7 @@ import {
   Upload,
   RotateCcw,
   Wallet,
+  Lock,
 } from 'lucide-react';
 import { TripSettings, Member, Expense } from '../types';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -19,6 +20,7 @@ interface SettingsViewProps {
   onSaveSettings: (newSettings: TripSettings) => void;
   onResetData: () => void;
   onImportData: (importedData: any) => void;
+  onLockApp?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -28,6 +30,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSaveSettings,
   onResetData,
   onImportData,
+  onLockApp,
 }) => {
   const [tripName, setTripName] = useState(settings.trip_name);
   const [subtitle, setSubtitle] = useState(settings.subtitle);
@@ -269,7 +272,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </p>
       </div>
 
-      {/* ── 4. Backup, Restore & Reset ────────────────── */}
+      {/* ── 4. App Security Lock ─────────────────────── */}
+      {onLockApp && (
+        <div className="card p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-zinc-900 text-white flex items-center justify-center">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">App Passcode Lock</h3>
+              <p className="text-xs text-slate-500">Lock the session now</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onLockApp}
+            className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs transition-all shadow-xs cursor-pointer active:scale-95"
+          >
+            Lock App Now
+          </button>
+        </div>
+      )}
+
+      {/* ── 5. Backup, Restore & Reset ────────────────── */}
       <div className="card p-5 space-y-4">
         <h3 className="text-sm font-bold text-slate-900">Data Backup & Restore</h3>
 

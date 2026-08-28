@@ -17,10 +17,14 @@ import { ExpenseModal } from './components/ExpenseModal';
 import { SettingsView } from './components/SettingsView';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { BillImageModal } from './components/BillImageModal';
+import { AppLockModal } from './components/AppLockModal';
 import { generateTripFinancialReportPDF } from './utils/pdfGenerator';
 
 export default function App() {
   const [settings, setSettings] = useState<TripSettings>(StorageService.getSettings());
+  const [isAppUnlocked, setIsAppUnlocked] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && sessionStorage.getItem('ujjain_trip_session_auth') === 'unlocked';
+  });
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [members, setMembers] = useState<Member[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -204,6 +208,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--color-text)] flex flex-col font-sans select-none sm:select-text">
+      {/* ── App Lock Modal (Passcode Protected, Zero UI Leaks) ── */}
+      {!isAppUnlocked && (
+        <AppLockModal
+          isUnlocked={isAppUnlocked}
+          onUnlock={() => setIsAppUnlocked(true)}
+          tripName={settings.trip_name}
+          subtitle={settings.subtitle}
+        />
+      )}
+
       {/* ── Header ── */}
       <Header
         settings={settings}
@@ -287,6 +301,10 @@ export default function App() {
             onSaveSettings={handleSaveSettings}
             onResetData={handleResetData}
             onImportData={handleImportData}
+            onLockApp={() => {
+              sessionStorage.removeItem('ujjain_trip_session_auth');
+              setIsAppUnlocked(false);
+            }}
           />
         )}
       </main>
