@@ -89,17 +89,18 @@ export function generateTripFinancialReportPDF(
 
   autoTable(doc, {
     startY: currentY + 4,
-    head: [['Member Name', 'Phone', 'Status', 'Expected', 'Paid', 'Payment Mode', 'Status']],
+    head: [['Member Name', 'Status', 'Expected', 'Paid', 'Pending Due', 'Payment Mode', 'Status']],
     body: members.map((m) => {
       const isPaid = m.amount_paid >= m.expected_contribution;
       const isPartial = m.amount_paid > 0 && m.amount_paid < m.expected_contribution;
+      const pendingDue = Math.max(0, m.expected_contribution - m.amount_paid);
       const payStatus = isPaid ? 'PAID' : isPartial ? 'PARTIAL' : 'PENDING';
       return [
         m.name,
-        m.phone || 'N/A',
         m.status,
         formatINR(m.expected_contribution, 'Rs.'),
         formatINR(m.amount_paid, 'Rs.'),
+        formatINR(pendingDue, 'Rs.'),
         m.payment_mode,
         payStatus,
       ];

@@ -35,7 +35,7 @@ export interface Member {
   id: string;
   trip_id?: string;
   name: string;
-  phone: string;
+  phone?: string;
   status: MemberStatus;
   expected_contribution: number;
   amount_paid: number;

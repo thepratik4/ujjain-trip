@@ -27,7 +27,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-1',
     name: 'Rahul Sharma',
-    phone: '9820112345',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -40,7 +39,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-2',
     name: 'Akash Verma',
-    phone: '9820223456',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -53,7 +51,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-3',
     name: 'Aman Gupta',
-    phone: '9820334567',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -66,7 +63,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-4',
     name: 'Rohit Joshi',
-    phone: '9820445678',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -79,7 +75,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-5',
     name: 'Sameer Khan',
-    phone: '9820556789',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -92,7 +87,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-6',
     name: 'Vikas Patel',
-    phone: '9820667890',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -105,7 +99,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-7',
     name: 'Kunal Shinde',
-    phone: '9820778901',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 4000,
@@ -118,7 +111,6 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: 'mem-8',
     name: 'Pratik Mane',
-    phone: '9820889012',
     status: 'Confirmed',
     expected_contribution: 4000,
     amount_paid: 0,
@@ -411,9 +403,10 @@ export class StorageService {
     csv += `Available Fund Balance,₹${summary.availableBalance}\n\n`;
 
     csv += 'MEMBERS & CONTRIBUTIONS\n';
-    csv += 'Name,Phone,Status,Expected (INR),Paid (INR),Payment Mode,Payment Date,Notes\n';
+    csv += 'Name,Status,Expected (INR),Paid (INR),Pending Due (INR),Payment Mode,Payment Date,Notes\n';
     members.forEach((m) => {
-      csv += `"${m.name.replace(/"/g, '""')}","${m.phone}","${m.status}",${m.expected_contribution},${m.amount_paid},"${m.payment_mode}","${m.payment_date || ''}","${(m.notes || '').replace(/"/g, '""')}"\n`;
+      const pendingDue = Math.max(0, m.expected_contribution - m.amount_paid);
+      csv += `"${m.name.replace(/"/g, '""')}","${m.status}",${m.expected_contribution},${m.amount_paid},${pendingDue},"${m.payment_mode}","${m.payment_date || ''}","${(m.notes || '').replace(/"/g, '""')}"\n`;
     });
 
     csv += '\nTRIP EXPENSES\n';

@@ -440,7 +440,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{m.name}</h4>
-                      <p className="text-[10px] text-slate-500">{m.phone || 'No phone'}</p>
+                      <p className="text-[10px] text-slate-500">{m.status} member</p>
                     </div>
                   </div>
                   <div className="text-right">

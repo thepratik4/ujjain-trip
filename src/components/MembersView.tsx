@@ -5,16 +5,12 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  Phone,
-  MessageCircle,
   Edit2,
   Trash2,
   CreditCard,
   Banknote,
-  SlidersHorizontal,
-  ChevronRight,
-  TrendingUp,
+  Clock,
+  ArrowDownCircle,
 } from 'lucide-react';
 import { Member, MemberStatus, FinancialSummary } from '../types';
 import { formatINR } from '../utils/currency';
@@ -40,7 +36,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'All' | MemberStatus>('All');
   const [paymentFilter, setPaymentFilter] = useState<'All' | 'Paid' | 'Partial' | 'Pending'>('All');
 
-  const filteredMembers = members.filter((m) => {
+  // Filter members
+  const filtered = members.filter((m) => {
     if (m.is_active === false) return false;
 
     // Status filter
@@ -59,13 +56,32 @@ export const MembersView: React.FC<MembersViewProps> = ({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = m.name.toLowerCase().includes(q);
-      const matchPhone = m.phone ? m.phone.includes(q) : false;
       const matchNotes = m.notes ? m.notes.toLowerCase().includes(q) : false;
-      return matchName || matchPhone || matchNotes;
+      return matchName || matchNotes;
     }
 
     return true;
   });
+
+  // SORT: Place Unpaid / Pending / Partial members at the VERY TOP
+  const sortedMembers = [...filtered].sort((a, b) => {
+    const aPending = Math.max(0, a.expected_contribution - a.amount_paid);
+    const bPending = Math.max(0, b.expected_contribution - b.amount_paid);
+
+    // If a has pending balance and b is paid, a comes first
+    if (aPending > 0 && bPending === 0) return -1;
+    if (aPending === 0 && bPending > 0) return 1;
+
+    // If both have pending, sort by higher pending amount first
+    if (aPending > 0 && bPending > 0) return bPending - aPending;
+
+    // Otherwise alphabetical
+    return a.name.localeCompare(b.name);
+  });
+
+  const unpaidMembers = members.filter(
+    (m) => m.status === 'Confirmed' && m.amount_paid < m.expected_contribution && m.is_active !== false
+  );
 
   return (
     <div className="space-y-4 pb-24 animate-fadeup">
@@ -135,7 +151,39 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       </div>
 
-      {/* ── 3. Search & Filter Bar ───────────────────── */}
+      {/* ── 3. Unpaid Members Top Banner (If Any) ──────── */}
+      {unpaidMembers.length > 0 && (
+        <div className="card p-4 bg-amber-50/80 border border-amber-200 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              Pending Payment from {unpaidMembers.length} {unpaidMembers.length === 1 ? 'Person' : 'People'}
+            </h3>
+            <span className="text-xs font-black text-amber-900">
+              {formatINR(summary.pendingCollection)} Due
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {unpaidMembers.map((m) => {
+              const pending = m.expected_contribution - m.amount_paid;
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => onQuickPayMember(m)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-amber-300 shadow-xs cursor-pointer hover:bg-amber-100/50 transition-all text-xs"
+                >
+                  <span className="font-bold text-slate-900">{m.name}:</span>
+                  <span className="font-extrabold text-rose-600">{formatINR(pending)} pending</span>
+                  <span className="text-[10px] text-amber-700 underline font-semibold">Pay ➔</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── 4. Search & Filter Bar ───────────────────── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
@@ -143,13 +191,13 @@ export const MembersView: React.FC<MembersViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by member name, phone or notes..."
+            placeholder="Search members by name or notes..."
             className="w-full text-xs font-medium bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-xs text-slate-400 hover:text-slate-600 font-bold"
+              className="text-xs text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
             >
               Clear
             </button>
@@ -190,8 +238,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       </div>
 
-      {/* ── 4. Member Cards List ──────────────────────── */}
-      {filteredMembers.length === 0 ? (
+      {/* ── 5. Member Cards List (Unpaid First) ───────── */}
+      {sortedMembers.length === 0 ? (
         <div className="card p-10 text-center text-slate-400 space-y-2">
           <Users className="w-10 h-10 mx-auto opacity-30 text-slate-600" />
           <h4 className="text-sm font-bold text-slate-700">No members found</h4>
@@ -199,7 +247,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredMembers.map((m) => {
+          {sortedMembers.map((m) => {
             const isPaid = m.amount_paid >= m.expected_contribution;
             const isPartial = m.amount_paid > 0 && m.amount_paid < m.expected_contribution;
             const pendingAmount = Math.max(0, m.expected_contribution - m.amount_paid);
@@ -211,7 +259,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
             return (
               <div
                 key={m.id}
-                className="card p-4 transition-all hover:shadow-md relative overflow-hidden"
+                className={`card p-4 transition-all hover:shadow-md relative overflow-hidden ${
+                  !isPaid ? 'border-amber-300 bg-amber-50/20' : ''
+                }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   {/* Left: Avatar & Info */}
@@ -222,7 +272,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                           ? 'bg-emerald-100 text-emerald-800'
                           : isPartial
                           ? 'bg-amber-100 text-amber-800'
-                          : 'bg-slate-100 text-slate-700'
+                          : 'bg-rose-100 text-rose-800'
                       }`}
                     >
                       {m.name.slice(0, 2).toUpperCase()}
@@ -259,25 +309,17 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         </span>
                       </div>
 
-                      {/* Phone & Mode */}
-                      <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                        {m.phone && (
-                          <span className="flex items-center gap-1 font-medium">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            {m.phone}
-                          </span>
-                        )}
-                        {m.amount_paid > 0 && (
-                          <span className="flex items-center gap-1">
-                            {m.payment_mode === 'Cash' ? (
-                              <Banknote className="w-3 h-3 text-emerald-600" />
-                            ) : (
-                              <CreditCard className="w-3 h-3 text-amber-600" />
-                            )}
-                            {m.payment_mode}
-                          </span>
-                        )}
-                      </div>
+                      {/* Payment Mode */}
+                      {m.amount_paid > 0 && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-slate-500 font-medium">
+                          {m.payment_mode === 'Cash' ? (
+                            <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <CreditCard className="w-3.5 h-3.5 text-amber-600" />
+                          )}
+                          <span>Paid via {m.payment_mode}</span>
+                        </div>
+                      )}
 
                       {m.notes && <p className="text-[11px] text-slate-500 mt-1 italic">"{m.notes}"</p>}
                     </div>
@@ -303,7 +345,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   </div>
                 </div>
 
-                {/* Progress bar for partial or pending */}
+                {/* Progress bar and Edit/Delete */}
                 <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
                   <div className="flex-1">
                     <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -317,35 +359,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Call button */}
-                    {m.phone && (
-                      <a
-                        href={`tel:${m.phone}`}
-                        className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
-                        title="Call Member"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                    {/* WhatsApp button */}
-                    {m.phone && (
-                      <a
-                        href={`https://wa.me/91${m.phone}?text=Hey%20${encodeURIComponent(
-                          m.name
-                        )},%20checking%20in%20regarding%20the%20Ujjain%20Trip%20Fund!`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
-                        title="Chat on WhatsApp"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </a>
-                    )}
                     {/* Edit button */}
                     <button
                       onClick={() => onEditMember(m)}
                       className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
-                      title="Edit Member Details"
+                      title="Edit Member"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
